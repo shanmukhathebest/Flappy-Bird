@@ -163,20 +163,11 @@
                 this.dayNightCycle = {
                     time: 0.25, // Start at daytime
                     speed: 0.0005,
-                    sun: { x: 0, y: 0, size: 80 },
-                    moon: { x: 0, y: 0, size: 70 },
                     stars: []
                 };
                 
                 // Generate stars
                 this.generateStars();
-                
-                // Load images
-                this.sunImage = new Image();
-                this.sunImage.src = 'https://www.onlygfx.com/wp-content/uploads/2018/09/4-clipart-sun-1.png';
-                
-                this.moonImage = new Image();
-                this.moonImage.src = 'https://png.pngtree.com/png-vector/20211014/ourmid/pngtree-cartoon-moon-shape-png-image_3982870.png';
                 
                 // Background scrolling
                 this.backgroundImage = new Image();
@@ -194,12 +185,14 @@
             
             generateStars() {
                 this.dayNightCycle.stars = [];
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 80; i++) { // More stars for better night sky
                     this.dayNightCycle.stars.push({
                         x: Math.random() * this.canvas.width,
-                        y: Math.random() * (this.canvas.height * 0.6),
-                        size: Math.random() * 2 + 1,
-                        brightness: Math.random() * 0.8 + 0.2
+                        y: Math.random() * (this.canvas.height * 0.7),
+                        size: Math.random() * 3 + 1,
+                        brightness: Math.random() * 0.8 + 0.2,
+                        twinkleSpeed: Math.random() * 0.05 + 0.02,
+                        twinkleOffset: Math.random() * Math.PI * 2
                     });
                 }
             }
@@ -210,40 +203,40 @@
                 if (this.dayNightCycle.time >= 1) {
                     this.dayNightCycle.time = 0;
                 }
-                
-                // Calculate sun position (moves from left to right above screen)
-                const sunProgress = this.dayNightCycle.time;
-                this.dayNightCycle.sun.x = -100 + (this.canvas.width + 200) * sunProgress;
-                this.dayNightCycle.sun.y = 80; // Fixed position above screen
-                
-                // Calculate moon position (moves from right to left above screen, offset from sun)
-                const moonProgress = (this.dayNightCycle.time + 0.5) % 1;
-                this.dayNightCycle.moon.x = -100 + (this.canvas.width + 200) * moonProgress;
-                this.dayNightCycle.moon.y = 60; // Fixed position above screen
             }
             
             getSkyColor() {
                 const time = this.dayNightCycle.time;
                 
-                // Dawn (0 - 0.25)
-                if (time < 0.25) {
-                    const progress = time / 0.25;
-                    return this.interpolateColor('#1a237e', '#4fc3f7', progress);
+                // Dawn (0 - 0.2): Deep blue to morning blue
+                if (time < 0.2) {
+                    const progress = time / 0.2;
+                    return this.interpolateColor('#0d1b2a', '#4a6583', progress);
                 }
-                // Day (0.25 - 0.5)
+                // Morning (0.2 - 0.35): Morning blue to light blue
+                else if (time < 0.35) {
+                    const progress = (time - 0.2) / 0.15;
+                    return this.interpolateColor('#4a6583', '#87CEEB', progress);
+                }
+                // Day (0.35 - 0.5): Light blue to bright blue
                 else if (time < 0.5) {
-                    const progress = (time - 0.25) / 0.25;
-                    return this.interpolateColor('#4fc3f7', '#1a237e', progress);
+                    const progress = (time - 0.35) / 0.15;
+                    return this.interpolateColor('#87CEEB', '#64b5f6', progress);
                 }
-                // Dusk (0.5 - 0.75)
-                else if (time < 0.75) {
-                    const progress = (time - 0.5) / 0.25;
-                    return this.interpolateColor('#1a237e', '#0d1b2a', progress);
+                // Evening (0.5 - 0.65): Bright blue to sunset purple
+                else if (time < 0.65) {
+                    const progress = (time - 0.5) / 0.15;
+                    return this.interpolateColor('#64b5f6', '#7b4397', progress);
                 }
-                // Night (0.75 - 1)
+                // Dusk (0.65 - 0.8): Sunset purple to deep purple
+                else if (time < 0.8) {
+                    const progress = (time - 0.65) / 0.15;
+                    return this.interpolateColor('#7b4397', '#4a235a', progress);
+                }
+                // Night (0.8 - 1): Deep purple to darkest blue
                 else {
-                    const progress = (time - 0.75) / 0.25;
-                    return this.interpolateColor('#0d1b2a', '#1a237e', progress);
+                    const progress = (time - 0.8) / 0.2;
+                    return this.interpolateColor('#4a235a', '#0d1b2a', progress);
                 }
             }
             
@@ -427,14 +420,16 @@
                 const skyColor = this.getSkyColor();
                 const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
                 
+                // More sophisticated gradient that changes with time
                 if (this.dayNightCycle.time < 0.5) {
-                    // Day gradient
+                    // Day gradient - lighter at top
                     gradient.addColorStop(0, skyColor);
-                    gradient.addColorStop(1, '#87CEEB');
+                    gradient.addColorStop(1, this.interpolateColor(skyColor, '#a8d8f0', 0.3));
                 } else {
-                    // Night gradient
+                    // Night gradient - darker overall
+                    const darkerSky = this.interpolateColor(skyColor, '#000814', 0.3);
                     gradient.addColorStop(0, skyColor);
-                    gradient.addColorStop(1, '#0d1b2a');
+                    gradient.addColorStop(1, darkerSky);
                 }
                 
                 this.ctx.fillStyle = gradient;
@@ -442,73 +437,60 @@
             }
             
             drawStars() {
-                // Draw stars during night time
-                if (this.dayNightCycle.time > 0.5) {
-                    const nightProgress = (this.dayNightCycle.time - 0.5) / 0.5;
-                    const starOpacity = Math.min(1, nightProgress * 2);
-                    
-                    this.ctx.fillStyle = `rgba(255, 255, 255, ${starOpacity})`;
+                // Draw stars with twinkling effect
+                const time = this.dayNightCycle.time;
+                
+                // Stars appear gradually during evening and disappear during morning
+                let starIntensity = 0;
+                if (time > 0.6 && time < 0.9) {
+                    // Evening to night - stars appear
+                    starIntensity = (time - 0.6) / 0.3;
+                } else if (time >= 0.9 || time < 0.2) {
+                    // Full night - stars at full intensity
+                    starIntensity = 1;
+                } else if (time >= 0.2 && time < 0.4) {
+                    // Night to morning - stars disappear
+                    starIntensity = 1 - (time - 0.2) / 0.2;
+                }
+                
+                if (starIntensity > 0) {
+                    const currentTime = Date.now() * 0.001;
                     
                     this.dayNightCycle.stars.forEach(star => {
+                        // Twinkling effect
+                        const twinkle = Math.sin(currentTime * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
+                        const opacity = star.brightness * twinkle * starIntensity;
+                        
+                        this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
                         this.ctx.beginPath();
                         this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                         this.ctx.fill();
+                        
+                        // Add glow for brighter stars
+                        if (star.brightness > 0.6) {
+                            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.3})`;
+                            this.ctx.beginPath();
+                            this.ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
+                            this.ctx.fill();
+                        }
                     });
-                }
-            }
-            
-            drawSunMoon() {
-                // Draw sun (visible during day)
-                if (this.dayNightCycle.time >= 0 && this.dayNightCycle.time <= 0.5) {
-                    const sunOpacity = 1 - Math.abs(this.dayNightCycle.time - 0.25) * 4;
-                    
-                    if (this.sunImage.complete && sunOpacity > 0) {
-                        this.ctx.globalAlpha = sunOpacity;
-                        this.ctx.drawImage(
-                            this.sunImage,
-                            this.dayNightCycle.sun.x - this.dayNightCycle.sun.size / 2,
-                            this.dayNightCycle.sun.y - this.dayNightCycle.sun.size / 2,
-                            this.dayNightCycle.sun.size,
-                            this.dayNightCycle.sun.size
-                        );
-                        this.ctx.globalAlpha = 1.0;
-                    }
-                }
-                
-                // Draw moon (visible during night)
-                if (this.dayNightCycle.time > 0.5 || this.dayNightCycle.time < 0.25) {
-                    let moonOpacity = 0;
-                    
-                    if (this.dayNightCycle.time > 0.5) {
-                        // Night moon
-                        moonOpacity = Math.min(1, (this.dayNightCycle.time - 0.5) * 4);
-                    } else {
-                        // Early morning moon
-                        moonOpacity = Math.min(1, (0.25 - this.dayNightCycle.time) * 4);
-                    }
-                    
-                    if (this.moonImage.complete && moonOpacity > 0) {
-                        this.ctx.globalAlpha = moonOpacity;
-                        this.ctx.drawImage(
-                            this.moonImage,
-                            this.dayNightCycle.moon.x - this.dayNightCycle.moon.size / 2,
-                            this.dayNightCycle.moon.y - this.dayNightCycle.moon.size / 2,
-                            this.dayNightCycle.moon.size,
-                            this.dayNightCycle.moon.size
-                        );
-                        this.ctx.globalAlpha = 1.0;
-                    }
                 }
             }
             
             drawBackground() {
                 this.drawSky();
                 this.drawStars();
-                this.drawSunMoon();
                 
-                // Draw scrolling background overlay with opacity based on time
+                // Draw scrolling background overlay with dynamic opacity
                 if (this.backgroundImage.complete) {
-                    const overlayOpacity = 0.3 + (this.dayNightCycle.time > 0.5 ? 0.2 : 0);
+                    const time = this.dayNightCycle.time;
+                    let overlayOpacity = 0.4;
+                    
+                    // Reduce overlay opacity at night for better star visibility
+                    if (time > 0.7 || time < 0.3) {
+                        overlayOpacity = 0.2;
+                    }
+                    
                     this.ctx.globalAlpha = overlayOpacity;
                     
                     this.ctx.drawImage(
