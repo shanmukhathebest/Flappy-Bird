@@ -128,6 +128,10 @@
             resizeCanvas() {
                 this.canvas.width = window.innerWidth;
                 this.canvas.height = window.innerHeight;
+                // Regenerate stars when resizing
+                if (this.dayNightCycle) {
+                    this.generateStars();
+                }
             }
             
             init() {
@@ -155,17 +159,24 @@
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
-                // Day/Night cycle
+                // Day/Night cycle - start at day (0.25 = full day)
                 this.dayNightCycle = {
-                    time: 0, // 0 = dawn, 0.25 = day, 0.5 = dusk, 0.75 = night
-                    speed: 0.0005, // How fast time progresses
-                    sun: { x: 0, y: 0, radius: 40 },
-                    moon: { x: 0, y: 0, radius: 35 },
+                    time: 0.25, // Start at daytime
+                    speed: 0.0005,
+                    sun: { x: 0, y: 0, size: 80 },
+                    moon: { x: 0, y: 0, size: 70 },
                     stars: []
                 };
                 
                 // Generate stars
                 this.generateStars();
+                
+                // Load images
+                this.sunImage = new Image();
+                this.sunImage.src = 'https://www.onlygfx.com/wp-content/uploads/2018/09/4-clipart-sun-1.png';
+                
+                this.moonImage = new Image();
+                this.moonImage.src = 'https://png.pngtree.com/png-vector/20211014/ourmid/pngtree-cartoon-moon-shape-png-image_3982870.png';
                 
                 // Background scrolling
                 this.backgroundImage = new Image();
@@ -200,18 +211,15 @@
                     this.dayNightCycle.time = 0;
                 }
                 
-                // Calculate sun and moon positions (circular path)
-                const angle = this.dayNightCycle.time * Math.PI * 2;
-                const centerX = this.canvas.width / 2;
-                const radius = this.canvas.width * 0.4;
+                // Calculate sun position (moves from left to right above screen)
+                const sunProgress = this.dayNightCycle.time;
+                this.dayNightCycle.sun.x = -100 + (this.canvas.width + 200) * sunProgress;
+                this.dayNightCycle.sun.y = 80; // Fixed position above screen
                 
-                // Sun follows day cycle (0 to 0.5)
-                this.dayNightCycle.sun.x = centerX + Math.cos(angle) * radius;
-                this.dayNightCycle.sun.y = this.canvas.height * 0.3 + Math.sin(angle) * radius * 0.5;
-                
-                // Moon follows night cycle (0.5 to 1)
-                this.dayNightCycle.moon.x = centerX + Math.cos(angle + Math.PI) * radius;
-                this.dayNightCycle.moon.y = this.canvas.height * 0.3 + Math.sin(angle + Math.PI) * radius * 0.5;
+                // Calculate moon position (moves from right to left above screen, offset from sun)
+                const moonProgress = (this.dayNightCycle.time + 0.5) % 1;
+                this.dayNightCycle.moon.x = -100 + (this.canvas.width + 200) * moonProgress;
+                this.dayNightCycle.moon.y = 60; // Fixed position above screen
             }
             
             getSkyColor() {
@@ -450,38 +458,46 @@
             }
             
             drawSunMoon() {
-                // Draw sun
-                if (this.dayNightCycle.time < 0.5) {
-                    const sunProgress = this.dayNightCycle.time / 0.5;
-                    const sunOpacity = 1 - Math.abs(sunProgress - 0.5) * 2;
+                // Draw sun (visible during day)
+                if (this.dayNightCycle.time >= 0 && this.dayNightCycle.time <= 0.5) {
+                    const sunOpacity = 1 - Math.abs(this.dayNightCycle.time - 0.25) * 4;
                     
-                    this.ctx.fillStyle = `rgba(255, 255, 0, ${sunOpacity})`;
-                    this.ctx.beginPath();
-                    this.ctx.arc(
-                        this.dayNightCycle.sun.x,
-                        this.dayNightCycle.sun.y,
-                        this.dayNightCycle.sun.radius,
-                        0,
-                        Math.PI * 2
-                    );
-                    this.ctx.fill();
+                    if (this.sunImage.complete && sunOpacity > 0) {
+                        this.ctx.globalAlpha = sunOpacity;
+                        this.ctx.drawImage(
+                            this.sunImage,
+                            this.dayNightCycle.sun.x - this.dayNightCycle.sun.size / 2,
+                            this.dayNightCycle.sun.y - this.dayNightCycle.sun.size / 2,
+                            this.dayNightCycle.sun.size,
+                            this.dayNightCycle.sun.size
+                        );
+                        this.ctx.globalAlpha = 1.0;
+                    }
                 }
                 
-                // Draw moon
-                if (this.dayNightCycle.time > 0.25) {
-                    const moonProgress = (this.dayNightCycle.time - 0.25) / 0.75;
-                    const moonOpacity = Math.min(1, moonProgress * 2);
+                // Draw moon (visible during night)
+                if (this.dayNightCycle.time > 0.5 || this.dayNightCycle.time < 0.25) {
+                    let moonOpacity = 0;
                     
-                    this.ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity})`;
-                    this.ctx.beginPath();
-                    this.ctx.arc(
-                        this.dayNightCycle.moon.x,
-                        this.dayNightCycle.moon.y,
-                        this.dayNightCycle.moon.radius,
-                        0,
-                        Math.PI * 2
-                    );
-                    this.ctx.fill();
+                    if (this.dayNightCycle.time > 0.5) {
+                        // Night moon
+                        moonOpacity = Math.min(1, (this.dayNightCycle.time - 0.5) * 4);
+                    } else {
+                        // Early morning moon
+                        moonOpacity = Math.min(1, (0.25 - this.dayNightCycle.time) * 4);
+                    }
+                    
+                    if (this.moonImage.complete && moonOpacity > 0) {
+                        this.ctx.globalAlpha = moonOpacity;
+                        this.ctx.drawImage(
+                            this.moonImage,
+                            this.dayNightCycle.moon.x - this.dayNightCycle.moon.size / 2,
+                            this.dayNightCycle.moon.y - this.dayNightCycle.moon.size / 2,
+                            this.dayNightCycle.moon.size,
+                            this.dayNightCycle.moon.size
+                        );
+                        this.ctx.globalAlpha = 1.0;
+                    }
                 }
             }
             
