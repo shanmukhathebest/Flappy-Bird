@@ -31,14 +31,13 @@
         .score-container {
             position: absolute;
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
+            right: 20px;
+            text-align: right;
             z-index: 10;
         }
         
         .high-score {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
             color: #FFD700;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
@@ -46,7 +45,7 @@
         }
         
         .current-score {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: bold;
             color: white;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
@@ -104,7 +103,7 @@
 </head>
 <body>
     <div class="score-container">
-        <div class="high-score">High Score: <span id="highScore">0</span></div>
+        <div class="high-score">High: <span id="highScore">0</span></div>
         <div class="current-score">Score: <span id="score">0</span></div>
     </div>
     <canvas id="gameCanvas"></canvas>
@@ -168,9 +167,11 @@
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
-                // Background
+                // Background scrolling
                 this.backgroundImage = new Image();
                 this.backgroundImage.src = 'https://user-images.githubusercontent.com/18351809/46888871-624a3900-ce7f-11e8-808e-99fd90c8a3f4.png';
+                this.backgroundX = 0;
+                this.backgroundSpeed = 0.5;
                 
                 // No ground - background takes full screen
                 this.bottomBoundary = this.canvas.height;
@@ -267,6 +268,14 @@
                 }
             }
             
+            updateBackground() {
+                // Scroll background
+                this.backgroundX -= this.backgroundSpeed;
+                if (this.backgroundX <= -this.canvas.width) {
+                    this.backgroundX = 0;
+                }
+            }
+            
             checkCollisions() {
                 // Fair hitbox for bird - only dies when touching green pipe parts
                 const birdHitbox = {
@@ -332,12 +341,19 @@
             }
             
             drawBackground() {
-                // Draw custom background - full screen with no blue bottom
+                // Draw scrolling background
                 if (this.backgroundImage.complete) {
-                    // Draw background image stretched to fill screen
+                    // Draw two copies of the background for seamless scrolling
                     this.ctx.drawImage(
                         this.backgroundImage,
+                        this.backgroundX,
                         0,
+                        this.canvas.width,
+                        this.canvas.height
+                    );
+                    this.ctx.drawImage(
+                        this.backgroundImage,
+                        this.backgroundX + this.canvas.width,
                         0,
                         this.canvas.width,
                         this.canvas.height
@@ -428,6 +444,7 @@
                 this.updateBird();
                 this.spawnPipes();
                 this.updatePipes();
+                this.updateBackground();
                 this.checkCollisions();
             }
             
