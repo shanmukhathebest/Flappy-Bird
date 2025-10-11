@@ -332,18 +332,19 @@
             }
             
             drawBackground() {
-                // Draw custom background - full screen
+                // Draw custom background - full screen with no blue bottom
                 if (this.backgroundImage.complete) {
-                    // Draw background image tiled to fill screen
-                    const pattern = this.ctx.createPattern(this.backgroundImage, 'repeat');
-                    this.ctx.fillStyle = pattern;
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    // Draw background image stretched to fill screen
+                    this.ctx.drawImage(
+                        this.backgroundImage,
+                        0,
+                        0,
+                        this.canvas.width,
+                        this.canvas.height
+                    );
                 } else {
-                    // Fallback background
-                    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                    gradient.addColorStop(0, '#87CEEB');
-                    gradient.addColorStop(1, '#98D8F0');
-                    this.ctx.fillStyle = gradient;
+                    // Fallback background - dark color that matches the GitHub background
+                    this.ctx.fillStyle = '#0d1117';
                     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 }
             }
