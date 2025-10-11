@@ -64,17 +64,10 @@
         
         .game-over h2 {
             font-size: 72px;
-            margin-bottom: 30px;
+            margin-bottom: 60px;
             color: #e74c3c;
             text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
             font-weight: bold;
-        }
-        
-        .final-score {
-            font-size: 48px;
-            margin-bottom: 40px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            color: #fff;
         }
         
         .restart-btn {
@@ -107,7 +100,6 @@
     
     <div class="game-over" id="gameOver">
         <h2>GAME OVER</h2>
-        <div class="final-score">Score: <span id="finalScore">0</span></div>
         <button class="restart-btn" onclick="restartGame()">Play Again</button>
     </div>
 
@@ -119,7 +111,6 @@
                 this.scoreElement = document.getElementById('score');
                 this.highScoreElement = document.getElementById('highScore');
                 this.gameOverElement = document.getElementById('gameOver');
-                this.finalScoreElement = document.getElementById('finalScore');
                 
                 // Load high score from localStorage
                 this.highScore = localStorage.getItem('flappyBirdHighScore') || 0;
@@ -164,6 +155,18 @@
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
+                // Day/Night cycle
+                this.dayNightCycle = {
+                    time: 0, // 0 = dawn, 0.25 = day, 0.5 = dusk, 0.75 = night
+                    speed: 0.0005, // How fast time progresses
+                    sun: { x: 0, y: 0, radius: 40 },
+                    moon: { x: 0, y: 0, radius: 35 },
+                    stars: []
+                };
+                
+                // Generate stars
+                this.generateStars();
+                
                 // Background scrolling
                 this.backgroundImage = new Image();
                 this.backgroundImage.src = 'https://user-images.githubusercontent.com/18351809/46888871-624a3900-ce7f-11e8-808e-99fd90c8a3f4.png';
@@ -176,6 +179,81 @@
                 // Load bird image
                 this.birdImage = new Image();
                 this.birdImage.src = 'https://www.pngarts.com/files/10/Flappy-Bird-Pixel-Art-PNG-Image-Transparent-Background.png';
+            }
+            
+            generateStars() {
+                this.dayNightCycle.stars = [];
+                for (let i = 0; i < 50; i++) {
+                    this.dayNightCycle.stars.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * (this.canvas.height * 0.6),
+                        size: Math.random() * 2 + 1,
+                        brightness: Math.random() * 0.8 + 0.2
+                    });
+                }
+            }
+            
+            updateDayNightCycle() {
+                // Update time
+                this.dayNightCycle.time += this.dayNightCycle.speed;
+                if (this.dayNightCycle.time >= 1) {
+                    this.dayNightCycle.time = 0;
+                }
+                
+                // Calculate sun and moon positions (circular path)
+                const angle = this.dayNightCycle.time * Math.PI * 2;
+                const centerX = this.canvas.width / 2;
+                const radius = this.canvas.width * 0.4;
+                
+                // Sun follows day cycle (0 to 0.5)
+                this.dayNightCycle.sun.x = centerX + Math.cos(angle) * radius;
+                this.dayNightCycle.sun.y = this.canvas.height * 0.3 + Math.sin(angle) * radius * 0.5;
+                
+                // Moon follows night cycle (0.5 to 1)
+                this.dayNightCycle.moon.x = centerX + Math.cos(angle + Math.PI) * radius;
+                this.dayNightCycle.moon.y = this.canvas.height * 0.3 + Math.sin(angle + Math.PI) * radius * 0.5;
+            }
+            
+            getSkyColor() {
+                const time = this.dayNightCycle.time;
+                
+                // Dawn (0 - 0.25)
+                if (time < 0.25) {
+                    const progress = time / 0.25;
+                    return this.interpolateColor('#1a237e', '#4fc3f7', progress);
+                }
+                // Day (0.25 - 0.5)
+                else if (time < 0.5) {
+                    const progress = (time - 0.25) / 0.25;
+                    return this.interpolateColor('#4fc3f7', '#1a237e', progress);
+                }
+                // Dusk (0.5 - 0.75)
+                else if (time < 0.75) {
+                    const progress = (time - 0.5) / 0.25;
+                    return this.interpolateColor('#1a237e', '#0d1b2a', progress);
+                }
+                // Night (0.75 - 1)
+                else {
+                    const progress = (time - 0.75) / 0.25;
+                    return this.interpolateColor('#0d1b2a', '#1a237e', progress);
+                }
+            }
+            
+            interpolateColor(color1, color2, progress) {
+                const hex = color => color.replace('#', '');
+                const r1 = parseInt(hex(color1).substr(0, 2), 16);
+                const g1 = parseInt(hex(color1).substr(2, 2), 16);
+                const b1 = parseInt(hex(color1).substr(4, 2), 16);
+                
+                const r2 = parseInt(hex(color2).substr(0, 2), 16);
+                const g2 = parseInt(hex(color2).substr(2, 2), 16);
+                const b2 = parseInt(hex(color2).substr(4, 2), 16);
+                
+                const r = Math.round(r1 + (r2 - r1) * progress);
+                const g = Math.round(g1 + (g2 - g1) * progress);
+                const b = Math.round(b1 + (b2 - b1) * progress);
+                
+                return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
             }
             
             setupEventListeners() {
@@ -319,7 +397,6 @@
             
             gameOver() {
                 this.gameRunning = false;
-                this.finalScoreElement.textContent = this.score;
                 
                 // Update high score if needed
                 if (this.score > this.highScore) {
@@ -337,10 +414,87 @@
                 this.scoreElement.textContent = '0';
             }
             
+            drawSky() {
+                // Draw gradient sky based on time of day
+                const skyColor = this.getSkyColor();
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                
+                if (this.dayNightCycle.time < 0.5) {
+                    // Day gradient
+                    gradient.addColorStop(0, skyColor);
+                    gradient.addColorStop(1, '#87CEEB');
+                } else {
+                    // Night gradient
+                    gradient.addColorStop(0, skyColor);
+                    gradient.addColorStop(1, '#0d1b2a');
+                }
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            drawStars() {
+                // Draw stars during night time
+                if (this.dayNightCycle.time > 0.5) {
+                    const nightProgress = (this.dayNightCycle.time - 0.5) / 0.5;
+                    const starOpacity = Math.min(1, nightProgress * 2);
+                    
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${starOpacity})`;
+                    
+                    this.dayNightCycle.stars.forEach(star => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+                }
+            }
+            
+            drawSunMoon() {
+                // Draw sun
+                if (this.dayNightCycle.time < 0.5) {
+                    const sunProgress = this.dayNightCycle.time / 0.5;
+                    const sunOpacity = 1 - Math.abs(sunProgress - 0.5) * 2;
+                    
+                    this.ctx.fillStyle = `rgba(255, 255, 0, ${sunOpacity})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(
+                        this.dayNightCycle.sun.x,
+                        this.dayNightCycle.sun.y,
+                        this.dayNightCycle.sun.radius,
+                        0,
+                        Math.PI * 2
+                    );
+                    this.ctx.fill();
+                }
+                
+                // Draw moon
+                if (this.dayNightCycle.time > 0.25) {
+                    const moonProgress = (this.dayNightCycle.time - 0.25) / 0.75;
+                    const moonOpacity = Math.min(1, moonProgress * 2);
+                    
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${moonOpacity})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(
+                        this.dayNightCycle.moon.x,
+                        this.dayNightCycle.moon.y,
+                        this.dayNightCycle.moon.radius,
+                        0,
+                        Math.PI * 2
+                    );
+                    this.ctx.fill();
+                }
+            }
+            
             drawBackground() {
-                // Draw scrolling background
+                this.drawSky();
+                this.drawStars();
+                this.drawSunMoon();
+                
+                // Draw scrolling background overlay with opacity based on time
                 if (this.backgroundImage.complete) {
-                    // Draw two copies of the background for seamless scrolling
+                    const overlayOpacity = 0.3 + (this.dayNightCycle.time > 0.5 ? 0.2 : 0);
+                    this.ctx.globalAlpha = overlayOpacity;
+                    
                     this.ctx.drawImage(
                         this.backgroundImage,
                         this.backgroundX,
@@ -355,10 +509,8 @@
                         this.canvas.width,
                         this.canvas.height
                     );
-                } else {
-                    // Fallback background - dark color that matches the GitHub background
-                    this.ctx.fillStyle = '#0d1117';
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    this.ctx.globalAlpha = 1.0;
                 }
             }
             
@@ -438,6 +590,7 @@
             update() {
                 if (!this.gameRunning) return;
                 
+                this.updateDayNightCycle();
                 this.updateBird();
                 this.spawnPipes();
                 this.updatePipes();
