@@ -33,11 +33,23 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .high-score {
+            font-size: 32px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
+        }
+        
+        .current-score {
             font-size: 48px;
             font-weight: bold;
             color: white;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            z-index: 10;
         }
         
         .game-over {
@@ -45,44 +57,56 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
-            padding: 30px;
-            border-radius: 15px;
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
             display: none;
             z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .game-over h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-            color: #e74c3c;
+            font-size: 42px;
+            margin-bottom: 25px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         
         .final-score {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         
         .restart-btn {
-            background: #2ecc71;
+            background: rgba(46, 204, 113, 0.9);
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 25px;
+            padding: 18px 35px;
+            font-size: 20px;
+            border-radius: 30px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         
         .restart-btn:hover {
-            background: #27ae60;
+            background: rgba(39, 174, 96, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
-    <div class="score-container">Score: <span id="score">0</span></div>
+    <div class="score-container">
+        <div class="high-score">High Score: <span id="highScore">0</span></div>
+        <div class="current-score">Score: <span id="score">0</span></div>
+    </div>
     <canvas id="gameCanvas"></canvas>
     
     <div class="game-over" id="gameOver">
@@ -97,8 +121,13 @@
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.scoreElement = document.getElementById('score');
+                this.highScoreElement = document.getElementById('highScore');
                 this.gameOverElement = document.getElementById('gameOver');
                 this.finalScoreElement = document.getElementById('finalScore');
+                
+                // Load high score from localStorage
+                this.highScore = localStorage.getItem('flappyBirdHighScore') || 0;
+                this.highScoreElement.textContent = this.highScore;
                 
                 // Set canvas to full screen
                 this.resizeCanvas();
@@ -125,12 +154,12 @@
                 this.gravity = 0.5;
                 this.gameSpeed = 5;
                 
-                // Bird properties (pixel art style)
+                // Bird properties (larger pixel art style)
                 this.bird = {
                     x: this.canvas.width * 0.2,
                     y: this.canvas.height / 2,
-                    width: 34,
-                    height: 24,
+                    width: 60,  // Increased from 34
+                    height: 42, // Increased from 24
                     velocity: 0,
                     jump: -10,
                     rotation: 0
@@ -139,7 +168,7 @@
                 // Pipes
                 this.pipes = [];
                 this.pipeWidth = 80;
-                this.pipeGap = 200;
+                this.pipeGap = 220; // Increased gap for larger bird
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
@@ -211,7 +240,7 @@
             spawnPipes() {
                 this.pipeSpawnTimer++;
                 if (this.pipeSpawnTimer >= this.pipeSpawnRate) {
-                    const minHeight = 80;
+                    const minHeight = 100;
                     const maxHeight = this.groundY - this.pipeGap - minHeight;
                     const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
                     
@@ -264,32 +293,33 @@
             }
             
             checkCollisions() {
-                const birdRect = {
-                    x: this.bird.x,
-                    y: this.bird.y,
-                    width: this.bird.width,
-                    height: this.bird.height
+                // Adjusted hitbox for bird (smaller than visual size)
+                const birdHitbox = {
+                    x: this.bird.x + 10, // Padding from left
+                    y: this.bird.y + 5,  // Padding from top
+                    width: this.bird.width - 20, // Reduced width
+                    height: this.bird.height - 10 // Reduced height
                 };
                 
                 for (const pipe of this.pipes) {
-                    // Top pipe
-                    const topPipeRect = {
-                        x: pipe.x,
+                    // Top pipe hitbox
+                    const topPipeHitbox = {
+                        x: pipe.x + 5, // Padding from left
                         y: 0,
-                        width: this.pipeWidth,
+                        width: this.pipeWidth - 10, // Reduced width
                         height: pipe.topHeight
                     };
                     
-                    // Bottom pipe
-                    const bottomPipeRect = {
-                        x: pipe.x,
+                    // Bottom pipe hitbox
+                    const bottomPipeHitbox = {
+                        x: pipe.x + 5, // Padding from left
                         y: pipe.bottomY,
-                        width: this.pipeWidth,
+                        width: this.pipeWidth - 10, // Reduced width
                         height: this.groundY - pipe.bottomY
                     };
                     
-                    if (this.rectCollision(birdRect, topPipeRect) || 
-                        this.rectCollision(birdRect, bottomPipeRect)) {
+                    if (this.rectCollision(birdHitbox, topPipeHitbox) || 
+                        this.rectCollision(birdHitbox, bottomPipeHitbox)) {
                         this.gameOver();
                         return;
                     }
@@ -306,6 +336,14 @@
             gameOver() {
                 this.gameRunning = false;
                 this.finalScoreElement.textContent = this.score;
+                
+                // Update high score if needed
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    this.highScoreElement.textContent = this.highScore;
+                    localStorage.setItem('flappyBirdHighScore', this.highScore);
+                }
+                
                 this.gameOverElement.style.display = 'block';
             }
             
