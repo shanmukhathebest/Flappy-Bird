@@ -154,21 +154,21 @@
                 this.gravity = 0.5;
                 this.gameSpeed = 5;
                 
-                // Bird properties (larger pixel art style)
+                // Bird properties (MUCH larger - like the reference)
                 this.bird = {
                     x: this.canvas.width * 0.2,
                     y: this.canvas.height / 2,
-                    width: 60,  // Increased from 34
-                    height: 42, // Increased from 24
+                    width: 80,  // Much larger - was 60
+                    height: 56, // Much larger - was 42
                     velocity: 0,
-                    jump: -10,
+                    jump: -12,  // Stronger jump for larger bird
                     rotation: 0
                 };
                 
                 // Pipes
                 this.pipes = [];
-                this.pipeWidth = 80;
-                this.pipeGap = 220; // Increased gap for larger bird
+                this.pipeWidth = 90;
+                this.pipeGap = 280; // Much larger gap for much larger bird
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
@@ -184,9 +184,12 @@
                 this.groundY = this.canvas.height - 80;
                 this.groundX = 0;
                 
-                // Load bird image
+                // Load images
                 this.birdImage = new Image();
                 this.birdImage.src = 'https://www.pngarts.com/files/10/Flappy-Bird-Pixel-Art-PNG-Image-Transparent-Background.png';
+                
+                this.pipeImage = new Image();
+                this.pipeImage.src = 'https://toppng.com/uploads/preview/flappy-bird-pipe-png-steel-casing-pipe-11562902157uauyp2h0pu.png';
             }
             
             setupEventListeners() {
@@ -240,7 +243,7 @@
             spawnPipes() {
                 this.pipeSpawnTimer++;
                 if (this.pipeSpawnTimer >= this.pipeSpawnRate) {
-                    const minHeight = 100;
+                    const minHeight = 120;
                     const maxHeight = this.groundY - this.pipeGap - minHeight;
                     const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
                     
@@ -293,28 +296,28 @@
             }
             
             checkCollisions() {
-                // Adjusted hitbox for bird (smaller than visual size)
+                // Exact hitbox for bird (instant death on any contact)
                 const birdHitbox = {
-                    x: this.bird.x + 10, // Padding from left
-                    y: this.bird.y + 5,  // Padding from top
-                    width: this.bird.width - 20, // Reduced width
-                    height: this.bird.height - 10 // Reduced height
+                    x: this.bird.x,
+                    y: this.bird.y,
+                    width: this.bird.width,
+                    height: this.bird.height
                 };
                 
                 for (const pipe of this.pipes) {
-                    // Top pipe hitbox
+                    // Top pipe hitbox - exact boundaries
                     const topPipeHitbox = {
-                        x: pipe.x + 5, // Padding from left
+                        x: pipe.x,
                         y: 0,
-                        width: this.pipeWidth - 10, // Reduced width
+                        width: this.pipeWidth,
                         height: pipe.topHeight
                     };
                     
-                    // Bottom pipe hitbox
+                    // Bottom pipe hitbox - exact boundaries
                     const bottomPipeHitbox = {
-                        x: pipe.x + 5, // Padding from left
+                        x: pipe.x,
                         y: pipe.bottomY,
-                        width: this.pipeWidth - 10, // Reduced width
+                        width: this.pipeWidth,
                         height: this.groundY - pipe.bottomY
                     };
                     
@@ -408,32 +411,88 @@
                         this.bird.height
                     );
                 } else {
-                    // Fallback if image doesn't load
+                    // Fallback if image doesn't load - draw a larger yellow bird
                     this.ctx.fillStyle = '#FFD700';
-                    this.ctx.fillRect(-this.bird.width/2, -this.bird.height/2, this.bird.width, this.bird.height);
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(0, 0, this.bird.width/2, this.bird.height/2, 0, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // Draw larger beak
+                    this.ctx.fillStyle = '#FF8C00';
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.bird.width/2 - 8, 0);
+                    this.ctx.lineTo(this.bird.width/2 + 15, -8);
+                    this.ctx.lineTo(this.bird.width/2 + 15, 8);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    
+                    // Draw larger eye
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.beginPath();
+                    this.ctx.arc(8, -8, 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.beginPath();
+                    this.ctx.arc(10, -8, 4, 0, Math.PI * 2);
+                    this.ctx.fill();
                 }
                 
                 this.ctx.restore();
             }
             
             drawPipes() {
-                this.ctx.fillStyle = '#73BF2E';
-                
                 for (const pipe of this.pipes) {
-                    // Top pipe
-                    this.ctx.fillRect(pipe.x, 0, this.pipeWidth, pipe.topHeight);
-                    
-                    // Top pipe cap
-                    this.ctx.fillStyle = '#5A9E2E';
-                    this.ctx.fillRect(pipe.x - 3, pipe.topHeight - 20, this.pipeWidth + 6, 20);
-                    
-                    // Bottom pipe
-                    this.ctx.fillStyle = '#73BF2E';
-                    this.ctx.fillRect(pipe.x, pipe.bottomY, this.pipeWidth, this.groundY - pipe.bottomY);
-                    
-                    // Bottom pipe cap
-                    this.ctx.fillStyle = '#5A9E2E';
-                    this.ctx.fillRect(pipe.x - 3, pipe.bottomY, this.pipeWidth + 6, 20);
+                    if (this.pipeImage.complete) {
+                        // Draw top pipe (flipped)
+                        this.ctx.save();
+                        this.ctx.translate(pipe.x + this.pipeWidth/2, pipe.topHeight);
+                        this.ctx.scale(1, -1);
+                        this.ctx.drawImage(
+                            this.pipeImage,
+                            -this.pipeWidth/2,
+                            0,
+                            this.pipeWidth,
+                            pipe.topHeight
+                        );
+                        this.ctx.restore();
+                        
+                        // Draw bottom pipe
+                        this.ctx.drawImage(
+                            this.pipeImage,
+                            pipe.x,
+                            pipe.bottomY,
+                            this.pipeWidth,
+                            this.groundY - pipe.bottomY
+                        );
+                    } else {
+                        // Fallback - draw steel-colored pipes
+                        // Top pipe
+                        const topPipeGradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + this.pipeWidth, 0);
+                        topPipeGradient.addColorStop(0, '#4A4A4A');
+                        topPipeGradient.addColorStop(0.5, '#7A7A7A');
+                        topPipeGradient.addColorStop(1, '#4A4A4A');
+                        
+                        this.ctx.fillStyle = topPipeGradient;
+                        this.ctx.fillRect(pipe.x, 0, this.pipeWidth, pipe.topHeight);
+                        
+                        // Top pipe cap
+                        this.ctx.fillStyle = '#2A2A2A';
+                        this.ctx.fillRect(pipe.x - 5, pipe.topHeight - 25, this.pipeWidth + 10, 25);
+                        
+                        // Bottom pipe
+                        const bottomPipeGradient = this.ctx.createLinearGradient(pipe.x, pipe.bottomY, pipe.x + this.pipeWidth, pipe.bottomY);
+                        bottomPipeGradient.addColorStop(0, '#4A4A4A');
+                        bottomPipeGradient.addColorStop(0.5, '#7A7A7A');
+                        bottomPipeGradient.addColorStop(1, '#4A4A4A');
+                        
+                        this.ctx.fillStyle = bottomPipeGradient;
+                        this.ctx.fillRect(pipe.x, pipe.bottomY, this.pipeWidth, this.groundY - pipe.bottomY);
+                        
+                        // Bottom pipe cap
+                        this.ctx.fillStyle = '#2A2A2A';
+                        this.ctx.fillRect(pipe.x - 5, pipe.bottomY, this.pipeWidth + 10, 25);
+                    }
                 }
             }
             
