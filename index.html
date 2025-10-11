@@ -56,48 +56,45 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             color: white;
-            padding: 40px;
-            border-radius: 20px;
             text-align: center;
             display: none;
             z-index: 100;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .game-over h2 {
-            font-size: 42px;
-            margin-bottom: 25px;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 72px;
+            margin-bottom: 30px;
+            color: #e74c3c;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+            font-weight: bold;
         }
         
         .final-score {
-            font-size: 28px;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 48px;
+            margin-bottom: 40px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            color: #fff;
         }
         
         .restart-btn {
-            background: rgba(46, 204, 113, 0.9);
-            color: white;
-            border: none;
-            padding: 18px 35px;
-            font-size: 20px;
-            border-radius: 30px;
+            background: transparent;
+            color: #2ecc71;
+            border: 3px solid #2ecc71;
+            padding: 20px 40px;
+            font-size: 24px;
+            border-radius: 35px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-weight: bold;
         }
         
         .restart-btn:hover {
-            background: rgba(39, 174, 96, 0.95);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: #2ecc71;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
         }
     </style>
 </head>
@@ -109,8 +106,8 @@
     <canvas id="gameCanvas"></canvas>
     
     <div class="game-over" id="gameOver">
-        <h2>Game Over!</h2>
-        <div class="final-score">Final Score: <span id="finalScore">0</span></div>
+        <h2>GAME OVER</h2>
+        <div class="final-score">Score: <span id="finalScore">0</span></div>
         <button class="restart-btn" onclick="restartGame()">Play Again</button>
     </div>
 
