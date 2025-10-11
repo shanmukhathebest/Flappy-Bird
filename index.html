@@ -172,13 +172,9 @@
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
-                // Background elements
-                this.backgroundX = 0;
-                this.clouds = [
-                    { x: 100, y: 80, width: 80, speed: 0.5 },
-                    { x: 400, y: 120, width: 120, speed: 0.3 },
-                    { x: 700, y: 60, width: 100, speed: 0.4 }
-                ];
+                // Background
+                this.backgroundImage = new Image();
+                this.backgroundImage.src = 'https://user-images.githubusercontent.com/18351809/46888871-624a3900-ce7f-11e8-808e-99fd90c8a3f4.png';
                 
                 // Ground
                 this.groundY = this.canvas.height - 80;
@@ -282,43 +278,33 @@
                 if (this.groundX <= -this.canvas.width) {
                     this.groundX = 0;
                 }
-                
-                // Update clouds
-                this.clouds.forEach(cloud => {
-                    cloud.x -= cloud.speed;
-                    if (cloud.x + cloud.width < 0) {
-                        cloud.x = this.canvas.width;
-                    }
-                });
             }
             
             checkCollisions() {
-                // Fair hitbox for bird (with padding)
+                // Exact hitbox for bird - dies when exactly touching pipes
                 const birdHitbox = {
-                    x: this.bird.x + 10,
-                    y: this.bird.y + 5,
-                    width: this.bird.width - 20,
-                    height: this.bird.height - 10
+                    x: this.bird.x,
+                    y: this.bird.y,
+                    width: this.bird.width,
+                    height: this.bird.height
                 };
                 
                 for (const pipe of this.pipes) {
-                    // Pipe hitbox (with padding)
-                    const pipeHitboxPadding = 5;
-                    
+                    // Exact pipe hitboxes - no padding
                     // Top pipe hitbox
                     const topPipeHitbox = {
-                        x: pipe.x + pipeHitboxPadding,
-                        y: 0 + pipeHitboxPadding,
-                        width: this.pipeWidth - (pipeHitboxPadding * 2),
-                        height: pipe.topHeight - pipeHitboxPadding
+                        x: pipe.x,
+                        y: 0,
+                        width: this.pipeWidth,
+                        height: pipe.topHeight
                     };
                     
                     // Bottom pipe hitbox
                     const bottomPipeHitbox = {
-                        x: pipe.x + pipeHitboxPadding,
-                        y: pipe.bottomY + pipeHitboxPadding,
-                        width: this.pipeWidth - (pipeHitboxPadding * 2),
-                        height: (this.groundY - pipe.bottomY) - pipeHitboxPadding
+                        x: pipe.x,
+                        y: pipe.bottomY,
+                        width: this.pipeWidth,
+                        height: this.groundY - pipe.bottomY
                     };
                     
                     if (this.rectCollision(birdHitbox, topPipeHitbox) || 
@@ -357,23 +343,20 @@
             }
             
             drawBackground() {
-                // Sky gradient
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, '#87CEEB');
-                gradient.addColorStop(1, '#98D8F0');
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Clouds
-                this.ctx.fillStyle = 'white';
-                this.clouds.forEach(cloud => {
-                    this.ctx.beginPath();
-                    this.ctx.arc(cloud.x, cloud.y, cloud.width/3, 0, Math.PI * 2);
-                    this.ctx.arc(cloud.x + cloud.width/3, cloud.y - 10, cloud.width/4, 0, Math.PI * 2);
-                    this.ctx.arc(cloud.x + cloud.width/2, cloud.y, cloud.width/3, 0, Math.PI * 2);
-                    this.ctx.arc(cloud.x + cloud.width*2/3, cloud.y + 5, cloud.width/4, 0, Math.PI * 2);
-                    this.ctx.fill();
-                });
+                // Draw custom background
+                if (this.backgroundImage.complete) {
+                    // Draw background image tiled to fill screen
+                    const pattern = this.ctx.createPattern(this.backgroundImage, 'repeat');
+                    this.ctx.fillStyle = pattern;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                } else {
+                    // Fallback background
+                    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                    gradient.addColorStop(0, '#87CEEB');
+                    gradient.addColorStop(1, '#98D8F0');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
             }
             
             drawGround() {
@@ -440,7 +423,7 @@
             }
             
             drawPipes() {
-                // Draw simple green pipes (no Mario pipes)
+                // Draw simple green pipes
                 this.ctx.fillStyle = '#73BF2E';
                 
                 for (const pipe of this.pipes) {
