@@ -141,10 +141,6 @@
             resizeCanvas() {
                 this.canvas.width = window.innerWidth;
                 this.canvas.height = window.innerHeight;
-                // Reinitialize game elements if game is running
-                if (this.gameRunning) {
-                    this.groundY = this.canvas.height - 80;
-                }
             }
             
             init() {
@@ -176,9 +172,8 @@
                 this.backgroundImage = new Image();
                 this.backgroundImage.src = 'https://user-images.githubusercontent.com/18351809/46888871-624a3900-ce7f-11e8-808e-99fd90c8a3f4.png';
                 
-                // Ground
-                this.groundY = this.canvas.height - 80;
-                this.groundX = 0;
+                // No ground - background takes full screen
+                this.bottomBoundary = this.canvas.height;
                 
                 // Load bird image
                 this.birdImage = new Image();
@@ -220,9 +215,9 @@
                 this.bird.rotation = this.bird.velocity * 0.1;
                 this.bird.rotation = Math.max(-0.5, Math.min(0.5, this.bird.rotation));
                 
-                // Check ground collision
-                if (this.bird.y + this.bird.height > this.groundY) {
-                    this.bird.y = this.groundY - this.bird.height;
+                // Check bottom boundary collision (screen edge)
+                if (this.bird.y + this.bird.height > this.bottomBoundary) {
+                    this.bird.y = this.bottomBoundary - this.bird.height;
                     this.gameOver();
                 }
                 
@@ -237,7 +232,7 @@
                 this.pipeSpawnTimer++;
                 if (this.pipeSpawnTimer >= this.pipeSpawnRate) {
                     const minHeight = 120;
-                    const maxHeight = this.groundY - this.pipeGap - minHeight;
+                    const maxHeight = this.bottomBoundary - this.pipeGap - minHeight;
                     const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
                     
                     this.pipes.push({
@@ -272,39 +267,33 @@
                 }
             }
             
-            updateBackground() {
-                // Scroll ground
-                this.groundX -= this.gameSpeed;
-                if (this.groundX <= -this.canvas.width) {
-                    this.groundX = 0;
-                }
-            }
-            
             checkCollisions() {
-                // Exact hitbox for bird - dies when exactly touching pipes
+                // Fair hitbox for bird - only dies when touching green pipe parts
                 const birdHitbox = {
-                    x: this.bird.x,
-                    y: this.bird.y,
-                    width: this.bird.width,
-                    height: this.bird.height
+                    x: this.bird.x + 8,  // Small padding from left
+                    y: this.bird.y + 6,  // Small padding from top
+                    width: this.bird.width - 16, // Reduced width
+                    height: this.bird.height - 12 // Reduced height
                 };
                 
                 for (const pipe of this.pipes) {
-                    // Exact pipe hitboxes - no padding
-                    // Top pipe hitbox
+                    // Pipe hitbox - only the green part (excluding caps)
+                    const pipeHitboxPadding = 8; // Padding to make it fair
+                    
+                    // Top pipe hitbox - green part only
                     const topPipeHitbox = {
-                        x: pipe.x,
-                        y: 0,
-                        width: this.pipeWidth,
-                        height: pipe.topHeight
+                        x: pipe.x + pipeHitboxPadding,
+                        y: 0 + pipeHitboxPadding,
+                        width: this.pipeWidth - (pipeHitboxPadding * 2),
+                        height: pipe.topHeight - 20 - pipeHitboxPadding // Exclude cap
                     };
                     
-                    // Bottom pipe hitbox
+                    // Bottom pipe hitbox - green part only
                     const bottomPipeHitbox = {
-                        x: pipe.x,
-                        y: pipe.bottomY,
-                        width: this.pipeWidth,
-                        height: this.groundY - pipe.bottomY
+                        x: pipe.x + pipeHitboxPadding,
+                        y: pipe.bottomY + 20 + pipeHitboxPadding, // Start after cap
+                        width: this.pipeWidth - (pipeHitboxPadding * 2),
+                        height: (this.bottomBoundary - pipe.bottomY) - pipeHitboxPadding
                     };
                     
                     if (this.rectCollision(birdHitbox, topPipeHitbox) || 
@@ -343,7 +332,7 @@
             }
             
             drawBackground() {
-                // Draw custom background
+                // Draw custom background - full screen
                 if (this.backgroundImage.complete) {
                     // Draw background image tiled to fill screen
                     const pattern = this.ctx.createPattern(this.backgroundImage, 'repeat');
@@ -357,26 +346,6 @@
                     this.ctx.fillStyle = gradient;
                     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 }
-            }
-            
-            drawGround() {
-                // Ground
-                this.ctx.fillStyle = '#DED895';
-                this.ctx.fillRect(0, this.groundY, this.canvas.width, this.canvas.height - this.groundY);
-                
-                // Ground pattern
-                this.ctx.fillStyle = '#C8B880';
-                for (let x = this.groundX; x < this.canvas.width * 2; x += 40) {
-                    this.ctx.fillRect(x, this.groundY, 20, 10);
-                }
-                
-                // Ground border
-                this.ctx.strokeStyle = '#8B7E3F';
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(0, this.groundY);
-                this.ctx.lineTo(this.canvas.width, this.groundY);
-                this.ctx.stroke();
             }
             
             drawBird() {
@@ -423,20 +392,19 @@
             }
             
             drawPipes() {
-                // Draw simple green pipes
-                this.ctx.fillStyle = '#73BF2E';
-                
+                // Draw pipes with green parts and caps
                 for (const pipe of this.pipes) {
-                    // Top pipe
-                    this.ctx.fillRect(pipe.x, 0, this.pipeWidth, pipe.topHeight);
+                    // Top pipe green part
+                    this.ctx.fillStyle = '#73BF2E';
+                    this.ctx.fillRect(pipe.x, 0, this.pipeWidth, pipe.topHeight - 20);
                     
                     // Top pipe cap
                     this.ctx.fillStyle = '#5A9E2E';
                     this.ctx.fillRect(pipe.x - 3, pipe.topHeight - 20, this.pipeWidth + 6, 20);
                     
-                    // Bottom pipe
+                    // Bottom pipe green part
                     this.ctx.fillStyle = '#73BF2E';
-                    this.ctx.fillRect(pipe.x, pipe.bottomY, this.pipeWidth, this.groundY - pipe.bottomY);
+                    this.ctx.fillRect(pipe.x, pipe.bottomY + 20, this.pipeWidth, this.bottomBoundary - pipe.bottomY - 20);
                     
                     // Bottom pipe cap
                     this.ctx.fillStyle = '#5A9E2E';
@@ -451,7 +419,6 @@
                 this.drawBackground();
                 this.drawPipes();
                 this.drawBird();
-                this.drawGround();
             }
             
             update() {
@@ -460,7 +427,6 @@
                 this.updateBird();
                 this.spawnPipes();
                 this.updatePipes();
-                this.updateBackground();
                 this.checkCollisions();
             }
             
