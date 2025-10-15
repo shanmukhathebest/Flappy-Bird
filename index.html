@@ -180,24 +180,24 @@
                 this.gameStarted = false;
                 this.score = 0;
                 this.gravity = 0.5;
-                this.gameSpeed = 5;
+                this.gameSpeed = 5; // Starting speed
                 this.gotNewHighScore = false;
                 
-                // Bird properties
+                // Bird properties - MUCH LARGER
                 this.bird = {
                     x: this.canvas.width * 0.2,
                     y: this.canvas.height / 2,
-                    width: 80,
-                    height: 56,
+                    width: 100,  // Increased from 80
+                    height: 70,  // Increased from 56
                     velocity: 0,
-                    jump: -12,
+                    jump: -14,   // Stronger jump for larger bird
                     rotation: 0
                 };
                 
-                // Pipes
+                // Pipes - wider gap for larger bird
                 this.pipes = [];
                 this.pipeWidth = 90;
-                this.pipeGap = 280;
+                this.pipeGap = 320; // Increased from 280
                 this.pipeSpawnTimer = 0;
                 this.pipeSpawnRate = 120;
                 
@@ -298,9 +298,6 @@
                     });
                     
                     this.pipeSpawnTimer = 0;
-                    
-                    // Increase speed as game progresses
-                    this.gameSpeed = Math.min(12, this.gameSpeed + 0.1);
                 }
             }
             
@@ -313,6 +310,9 @@
                         this.pipes[i].passed = true;
                         this.score++;
                         this.scoreElement.textContent = this.score;
+                        
+                        // INCREASE SPEED after passing each pipe
+                        this.gameSpeed = Math.min(15, this.gameSpeed + 0.3); // Increased from 0.1 to 0.3
                     }
                     
                     // Remove off-screen pipes
@@ -333,10 +333,10 @@
             checkCollisions() {
                 // Fair hitbox for bird - only dies when touching green pipe parts
                 const birdHitbox = {
-                    x: this.bird.x + 8,  // Small padding from left
-                    y: this.bird.y + 6,  // Small padding from top
-                    width: this.bird.width - 16, // Reduced width
-                    height: this.bird.height - 12 // Reduced height
+                    x: this.bird.x + 10,  // Adjusted padding for larger bird
+                    y: this.bird.y + 8,   // Adjusted padding for larger bird
+                    width: this.bird.width - 20, // Reduced width
+                    height: this.bird.height - 16 // Reduced height
                 };
                 
                 for (const pipe of this.pipes) {
@@ -402,8 +402,16 @@
             }
             
             drawWaitingScreen() {
-                // Draw your background image full screen
+                // Draw vibrant blue background (same as gameplay)
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                gradient.addColorStop(0, '#64b5f6'); // Bright blue
+                gradient.addColorStop(1, '#42a5f5'); // Vibrant blue
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw your background image with higher opacity for vibrancy
                 if (this.backgroundImage.complete) {
+                    this.ctx.globalAlpha = 0.6; // Increased opacity for vibrancy
                     this.ctx.drawImage(
                         this.backgroundImage,
                         0,
@@ -411,13 +419,7 @@
                         this.canvas.width,
                         this.canvas.height
                     );
-                } else {
-                    // Fallback background
-                    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                    gradient.addColorStop(0, '#87CEEB');
-                    gradient.addColorStop(1, '#98D8F0');
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.globalAlpha = 1.0;
                 }
                 
                 // Draw bird in resting position
@@ -443,9 +445,16 @@
             }
             
             drawBackground() {
-                // Draw scrolling background overlay
+                // Draw vibrant blue background (same as waiting screen)
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                gradient.addColorStop(0, '#64b5f6'); // Bright blue
+                gradient.addColorStop(1, '#42a5f5'); // Vibrant blue
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw scrolling background overlay with higher opacity
                 if (this.backgroundImage.complete) {
-                    this.ctx.globalAlpha = 0.4;
+                    this.ctx.globalAlpha = 0.6; // Increased opacity for vibrancy
                     
                     this.ctx.drawImage(
                         this.backgroundImage,
@@ -489,20 +498,20 @@
                     
                     this.ctx.fillStyle = '#FF8C00';
                     this.ctx.beginPath();
-                    this.ctx.moveTo(this.bird.width/2 - 8, 0);
-                    this.ctx.lineTo(this.bird.width/2 + 15, -8);
-                    this.ctx.lineTo(this.bird.width/2 + 15, 8);
+                    this.ctx.moveTo(this.bird.width/2 - 10, 0);
+                    this.ctx.lineTo(this.bird.width/2 + 18, -10);
+                    this.ctx.lineTo(this.bird.width/2 + 18, 10);
                     this.ctx.closePath();
                     this.ctx.fill();
                     
                     this.ctx.fillStyle = 'white';
                     this.ctx.beginPath();
-                    this.ctx.arc(8, -8, 8, 0, Math.PI * 2);
+                    this.ctx.arc(10, -10, 10, 0, Math.PI * 2);
                     this.ctx.fill();
                     
                     this.ctx.fillStyle = 'black';
                     this.ctx.beginPath();
-                    this.ctx.arc(10, -8, 4, 0, Math.PI * 2);
+                    this.ctx.arc(12, -10, 5, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
                 
