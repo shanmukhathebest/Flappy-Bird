@@ -30,7 +30,7 @@
         
         .score-container {
             position: absolute;
-            top: 20px; /* Back to original position */
+            top: 20px;
             right: 20px;
             text-align: right;
             z-index: 10;
@@ -38,7 +38,7 @@
         }
         
         .high-score {
-            font-size: 36px; /* Same size as others */
+            font-size: 36px;
             font-weight: bold;
             color: #FFD700;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
@@ -46,17 +46,9 @@
         }
         
         .current-score {
-            font-size: 36px; /* Same size as others */
+            font-size: 36px;
             font-weight: bold;
             color: white;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            margin-bottom: 5px;
-        }
-        
-        .global-score {
-            font-size: 36px; /* Same size as others */
-            font-weight: bold;
-            color: #FF6B6B;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
         }
         
@@ -107,50 +99,12 @@
             animation: glow 1.5s ease-in-out infinite alternate;
         }
         
-        .global-high-score {
-            font-size: 42px;
-            margin-bottom: 30px;
-            font-weight: bold;
-            animation: rainbowGlow 2s ease-in-out infinite alternate;
-        }
-        
         @keyframes glow {
             from {
                 text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #FFD700, 0 0 40px #FFD700;
             }
             to {
                 text-shadow: 0 0 20px #fff, 0 0 30px #FFD700, 0 0 40px #FFD700, 0 0 50px #FFD700;
-            }
-        }
-        
-        @keyframes rainbowGlow {
-            0% {
-                color: #FF6B6B;
-                text-shadow: 0 0 10px #FF6B6B, 0 0 20px #FF6B6B, 0 0 30px #FF6B6B;
-            }
-            16% {
-                color: #FFD166;
-                text-shadow: 0 0 10px #FFD166, 0 0 20px #FFD166, 0 0 30px #FFD166;
-            }
-            33% {
-                color: #06D6A0;
-                text-shadow: 0 0 10px #06D6A0, 0 0 20px #06D6A0, 0 0 30px #06D6A0;
-            }
-            50% {
-                color: #118AB2;
-                text-shadow: 0 0 10px #118AB2, 0 0 20px #118AB2, 0 0 30px #118AB2;
-            }
-            66% {
-                color: #073B4C;
-                text-shadow: 0 0 10px #073B4C, 0 0 20px #073B4C, 0 0 30px #073B4C;
-            }
-            83% {
-                color: #8338EC;
-                text-shadow: 0 0 10px #8338EC, 0 0 20px #8338EC, 0 0 30px #8338EC;
-            }
-            100% {
-                color: #FF6B6B;
-                text-shadow: 0 0 10px #FF6B6B, 0 0 20px #FF6B6B, 0 0 30px #FF6B6B;
             }
         }
         
@@ -177,9 +131,8 @@
 </head>
 <body>
     <div class="score-container">
-        <div class="current-score">Score: <span id="score">0</span></div>
         <div class="high-score">High: <span id="highScore">0</span></div>
-        <div class="global-score">Global: <span id="globalScore">0</span></div>
+        <div class="current-score">Score: <span id="score">0</span></div>
     </div>
     <canvas id="gameCanvas"></canvas>
     
@@ -188,7 +141,6 @@
     <div class="game-over" id="gameOver">
         <h2>GAME OVER</h2>
         <div class="new-high-score" id="newHighScore" style="display: none;">New High Score!</div>
-        <div class="global-high-score" id="globalHighScore" style="display: none;">You Beat Global High Score!</div>
         <button class="restart-btn" onclick="restartGame()">Play Again</button>
     </div>
 
@@ -199,18 +151,14 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.scoreElement = document.getElementById('score');
                 this.highScoreElement = document.getElementById('highScore');
-                this.globalScoreElement = document.getElementById('globalScore');
                 this.gameOverElement = document.getElementById('gameOver');
                 this.newHighScoreElement = document.getElementById('newHighScore');
-                this.globalHighScoreElement = document.getElementById('globalHighScore');
                 this.startMessageElement = document.getElementById('startMessage');
                 this.scoreContainerElement = document.querySelector('.score-container');
                 
-                // Load scores from localStorage
+                // Load high score from localStorage
                 this.highScore = localStorage.getItem('flappyBirdHighScore') || 0;
-                this.globalHighScore = localStorage.getItem('flappyBirdGlobalHighScore') || 0;
                 this.highScoreElement.textContent = this.highScore;
-                this.globalScoreElement.textContent = this.globalHighScore;
                 
                 // Set canvas to full screen
                 this.resizeCanvas();
@@ -234,7 +182,6 @@
                 this.gravity = 0.5;
                 this.gameSpeed = 5; // Starting speed
                 this.gotNewHighScore = false;
-                this.gotNewGlobalScore = false;
                 
                 // Bird properties - MUCH LARGER
                 this.bird = {
@@ -441,18 +388,6 @@
                     this.newHighScoreElement.style.display = 'none';
                 }
                 
-                // Check for new global high score
-                if (this.score > this.globalHighScore) {
-                    this.gotNewGlobalScore = true;
-                    this.globalHighScore = this.score;
-                    this.globalScoreElement.textContent = this.globalHighScore;
-                    localStorage.setItem('flappyBirdGlobalHighScore', this.globalHighScore);
-                    this.globalHighScoreElement.style.display = 'block';
-                    this.newHighScoreElement.style.display = 'none'; // Hide regular high score if global is achieved
-                } else {
-                    this.globalHighScoreElement.style.display = 'none';
-                }
-                
                 this.gameOverElement.style.display = 'block';
             }
             
@@ -460,7 +395,6 @@
                 this.init();
                 this.gameOverElement.style.display = 'none';
                 this.newHighScoreElement.style.display = 'none';
-                this.globalHighScoreElement.style.display = 'none';
                 this.scoreElement.textContent = '0';
                 // Don't show start message again after restart
                 this.scoreContainerElement.style.display = 'block';
