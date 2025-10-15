@@ -34,6 +34,7 @@
             right: 20px;
             text-align: right;
             z-index: 10;
+            display: none;
         }
         
         .high-score {
@@ -395,17 +396,29 @@
                 this.gameOverElement.style.display = 'none';
                 this.newHighScoreElement.style.display = 'none';
                 this.scoreElement.textContent = '0';
-                this.startMessageElement.style.display = 'block';
-                this.scoreContainerElement.style.display = 'none';
+                // Don't show start message again after restart
+                this.scoreContainerElement.style.display = 'block';
+                this.startGame();
             }
             
             drawWaitingScreen() {
-                // Draw background
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, '#87CEEB');
-                gradient.addColorStop(1, '#98D8F0');
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                // Draw your background image full screen
+                if (this.backgroundImage.complete) {
+                    this.ctx.drawImage(
+                        this.backgroundImage,
+                        0,
+                        0,
+                        this.canvas.width,
+                        this.canvas.height
+                    );
+                } else {
+                    // Fallback background
+                    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                    gradient.addColorStop(0, '#87CEEB');
+                    gradient.addColorStop(1, '#98D8F0');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
                 
                 // Draw bird in resting position
                 this.ctx.save();
@@ -430,13 +443,6 @@
             }
             
             drawBackground() {
-                // Draw solid blue sky background
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, '#87CEEB');
-                gradient.addColorStop(1, '#98D8F0');
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
                 // Draw scrolling background overlay
                 if (this.backgroundImage.complete) {
                     this.ctx.globalAlpha = 0.4;
