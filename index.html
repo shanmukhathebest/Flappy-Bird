@@ -131,8 +131,8 @@
 </head>
 <body>
     <div class="score-container">
-        <div class="high-score">High: <span id="highScore">0</span></div>
         <div class="current-score">Score: <span id="score">0</span></div>
+        <div class="high-score">High: <span id="highScore">0</span></div>
     </div>
     <canvas id="gameCanvas"></canvas>
     
@@ -180,32 +180,32 @@
                 this.gameStarted = false;
                 this.score = 0;
                 this.gravity = 0.5;
-                this.gameSpeed = 5; // Starting speed
+                this.gameSpeed = 8; // FASTER STARTING SPEED (was 5)
                 this.gotNewHighScore = false;
                 
-                // Bird properties - MUCH LARGER
+                // Bird properties
                 this.bird = {
                     x: this.canvas.width * 0.2,
                     y: this.canvas.height / 2,
-                    width: 100,  // Increased from 80
-                    height: 70,  // Increased from 56
+                    width: 100,
+                    height: 70,
                     velocity: 0,
-                    jump: -14,   // Stronger jump for larger bird
+                    jump: -14,
                     rotation: 0
                 };
                 
-                // Pipes - wider gap for larger bird
+                // Pipes
                 this.pipes = [];
                 this.pipeWidth = 90;
-                this.pipeGap = 320; // Increased from 280
+                this.pipeGap = 320;
                 this.pipeSpawnTimer = 0;
-                this.pipeSpawnRate = 120;
+                this.pipeSpawnRate = 90; // FASTER PIPE SPAWNING (was 120)
                 
                 // Background scrolling
                 this.backgroundImage = new Image();
                 this.backgroundImage.src = 'https://user-images.githubusercontent.com/18351809/46888871-624a3900-ce7f-11e8-808e-99fd90c8a3f4.png';
                 this.backgroundX = 0;
-                this.backgroundSpeed = 0.5;
+                this.backgroundSpeed = 1.0; // FASTER BACKGROUND (was 0.5)
                 
                 // No ground - background takes full screen
                 this.bottomBoundary = this.canvas.height;
@@ -312,7 +312,7 @@
                         this.scoreElement.textContent = this.score;
                         
                         // INCREASE SPEED after passing each pipe
-                        this.gameSpeed = Math.min(15, this.gameSpeed + 0.3); // Increased from 0.1 to 0.3
+                        this.gameSpeed = Math.min(20, this.gameSpeed + 0.4); // FASTER INCREASE (was 0.3)
                     }
                     
                     // Remove off-screen pipes
@@ -333,28 +333,28 @@
             checkCollisions() {
                 // Fair hitbox for bird - only dies when touching green pipe parts
                 const birdHitbox = {
-                    x: this.bird.x + 10,  // Adjusted padding for larger bird
-                    y: this.bird.y + 8,   // Adjusted padding for larger bird
-                    width: this.bird.width - 20, // Reduced width
-                    height: this.bird.height - 16 // Reduced height
+                    x: this.bird.x + 10,
+                    y: this.bird.y + 8,
+                    width: this.bird.width - 20,
+                    height: this.bird.height - 16
                 };
                 
                 for (const pipe of this.pipes) {
                     // Pipe hitbox - only the green part (excluding caps)
-                    const pipeHitboxPadding = 8; // Padding to make it fair
+                    const pipeHitboxPadding = 8;
                     
                     // Top pipe hitbox - green part only
                     const topPipeHitbox = {
                         x: pipe.x + pipeHitboxPadding,
                         y: 0 + pipeHitboxPadding,
                         width: this.pipeWidth - (pipeHitboxPadding * 2),
-                        height: pipe.topHeight - 20 - pipeHitboxPadding // Exclude cap
+                        height: pipe.topHeight - 20 - pipeHitboxPadding
                     };
                     
                     // Bottom pipe hitbox - green part only
                     const bottomPipeHitbox = {
                         x: pipe.x + pipeHitboxPadding,
-                        y: pipe.bottomY + 20 + pipeHitboxPadding, // Start after cap
+                        y: pipe.bottomY + 20 + pipeHitboxPadding,
                         width: this.pipeWidth - (pipeHitboxPadding * 2),
                         height: (this.bottomBoundary - pipe.bottomY) - pipeHitboxPadding
                     };
@@ -396,22 +396,21 @@
                 this.gameOverElement.style.display = 'none';
                 this.newHighScoreElement.style.display = 'none';
                 this.scoreElement.textContent = '0';
-                // Don't show start message again after restart
                 this.scoreContainerElement.style.display = 'block';
                 this.startGame();
             }
             
             drawWaitingScreen() {
-                // Draw vibrant blue background (same as gameplay)
+                // Draw vibrant blue background
                 const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, '#64b5f6'); // Bright blue
-                gradient.addColorStop(1, '#42a5f5'); // Vibrant blue
+                gradient.addColorStop(0, '#64b5f6');
+                gradient.addColorStop(1, '#42a5f5');
                 this.ctx.fillStyle = gradient;
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Draw your background image with higher opacity for vibrancy
+                // Draw background image
                 if (this.backgroundImage.complete) {
-                    this.ctx.globalAlpha = 0.6; // Increased opacity for vibrancy
+                    this.ctx.globalAlpha = 0.6;
                     this.ctx.drawImage(
                         this.backgroundImage,
                         0,
@@ -445,16 +444,16 @@
             }
             
             drawBackground() {
-                // Draw vibrant blue background (same as waiting screen)
+                // Draw vibrant blue background
                 const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, '#64b5f6'); // Bright blue
-                gradient.addColorStop(1, '#42a5f5'); // Vibrant blue
+                gradient.addColorStop(0, '#64b5f6');
+                gradient.addColorStop(1, '#42a5f5');
                 this.ctx.fillStyle = gradient;
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Draw scrolling background overlay with higher opacity
+                // Draw scrolling background overlay
                 if (this.backgroundImage.complete) {
-                    this.ctx.globalAlpha = 0.6; // Increased opacity for vibrancy
+                    this.ctx.globalAlpha = 0.6;
                     
                     this.ctx.drawImage(
                         this.backgroundImage,
